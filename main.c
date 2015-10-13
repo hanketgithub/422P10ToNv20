@@ -22,6 +22,8 @@
 #define MAX_HEIGHT  2160
 
 static uint8_t img       [MAX_WIDTH * MAX_HEIGHT * 4];
+static uint8_t y_dst     [MAX_WIDTH * MAX_HEIGHT / 4 * sizeof(quatre_pixel)];
+static uint8_t u_et_v_dst[MAX_WIDTH * MAX_HEIGHT / 4 * sizeof(quatre_pixel)];
 
 int main(int argc, char *argv[])
 {
@@ -71,61 +73,67 @@ int main(int argc, char *argv[])
     width   = atoi(argv[2]);
     height  = atoi(argv[3]);
     wxh     = width * height;
-    
-    while ((rd_sz = read(fd_rd, img, wxh * 4)) == wxh * 4)
+
+
+    while (1)
     {
-        y = (uint64_t *) img;
-        u = (uint32_t *) ((uint8_t *) img + width * height * 2);
-        v = (uint32_t *) ((uint8_t *) img + width * height * 2 + width * height);
-
-        // Y
-        quatre_pixel *py = malloc(width * height / 4 * sizeof(quatre_pixel));
-        quatre_pixel *p = py;
-        for (i = 0; i < height; i++)
-        {
-            for (j = 0; j < width / 4; j++) // 4 horizantal pixel at a time
-            {
-                memset(&q_pix, 0, sizeof(q_pix));
-
-                pack_y(&q_pix, (uint8_t *) y);
-
-                memcpy(p, &q_pix, sizeof(quatre_pixel));
-
-                y++;
-                p++;
-            }
-        }
-        write(fd_wr, py, width * height / 4 * sizeof(quatre_pixel));
-        free(py);
+        rd_sz = read(fd_rd, img, wxh * 4);
         
-        // U, V
-        quatre_pixel *quv = malloc(width * height / 4 * sizeof(quatre_pixel));
-        quatre_pixel *q = quv;
-        for (i = 0; i < height; i++)
+        if (rd_sz == wxh * 4)
         {
-            for (j = 0; j < width / 4; j++) // 2 horizontal pixel at a time
+            y = (uint64_t *) img;
+            u = (uint32_t *) ((uint8_t *) img + width * height * 2);
+            v = (uint32_t *) ((uint8_t *) img + width * height * 2 + width * height);
+    
+            // Y
+            quatre_pixel *p = (quatre_pixel *) y_dst;
+            for (i = 0; i < height; i++)
             {
-                memset(&q_pix, 0, sizeof(q_pix));
-                
-                pack_uv
-                (
-                    &q_pix,
-                    (uint8_t *) u,
-                    (uint8_t *) v
-                );
+                for (j = 0; j < width / 4; j++) // 4 horizantal pixel at a time
+                {
+                    memset(&q_pix, 0, sizeof(q_pix));
 
-                memcpy(q, &q_pix, sizeof(quatre_pixel));
+                    pack_y(&q_pix, (uint8_t *) y);
 
-                u++;
-                v++;
-                q++;
+                    memcpy(p, &q_pix, sizeof(quatre_pixel));
+
+                    y++;
+                    p++;
+                }
             }
+            write(fd_wr, y_dst, width * height / 4 * sizeof(quatre_pixel));
+            
+            // U, V
+            quatre_pixel *q = (quatre_pixel *) u_et_v_dst;
+            for (i = 0; i < height; i++)
+            {
+                for (j = 0; j < width / 4; j++) // 2 horizontal pixel at a time
+                {
+                    memset(&q_pix, 0, sizeof(q_pix));
+                    
+                    pack_uv
+                    (
+                        &q_pix,
+                        (uint8_t *) u,
+                        (uint8_t *) v
+                    );
+
+                    memcpy(q, &q_pix, sizeof(quatre_pixel));
+
+                    u++;
+                    v++;
+                    q++;
+                }
+            }
+            write(fd_wr, u_et_v_dst, width * height / 4 * sizeof(quatre_pixel));
+            
+            fprintf(stderr, "Frame %d completed.\n", count);
+            count++;
         }
-        write(fd_wr, quv, width * height / 4 * sizeof(quatre_pixel));
-        free(quv);
-        
-        fprintf(stderr, "Frame %d completed.\n", count);
-        count++;
+        else
+        {
+            break;
+        }
     }
     
     close(fd_rd);
