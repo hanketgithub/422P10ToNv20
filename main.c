@@ -18,12 +18,10 @@
 
 #include "pack.h"
 
-#define MAX_WIDTH   3840
+#define MAX_WIDTH   4096
 #define MAX_HEIGHT  2160
 
-static uint8_t img       [MAX_WIDTH * MAX_HEIGHT * 4];
-static uint8_t y_dst     [MAX_WIDTH * MAX_HEIGHT / 4 * sizeof(quatre_pixel)];
-static uint8_t u_et_v_dst[MAX_WIDTH * MAX_HEIGHT / 4 * sizeof(quatre_pixel)];
+static uint8_t img[MAX_WIDTH * MAX_HEIGHT * 4];
 
 int main(int argc, char *argv[])
 {
@@ -86,7 +84,7 @@ int main(int argc, char *argv[])
             v = (uint32_t *) ((uint8_t *) img + width * height * 2 + width * height);
     
             // Y
-            quatre_pixel *p = (quatre_pixel *) y_dst;
+            quatre_pixel *p = (quatre_pixel *) y;
             for (i = 0; i < height; i++)
             {
                 for (j = 0; j < width / 4; j++) // 4 horizantal pixel at a time
@@ -101,10 +99,10 @@ int main(int argc, char *argv[])
                     p++;
                 }
             }
-            write(fd_wr, y_dst, width * height / 4 * sizeof(quatre_pixel));
+            write(fd_wr, img, width * height / 4 * sizeof(quatre_pixel));
             
             // U, V
-            quatre_pixel *q = (quatre_pixel *) u_et_v_dst;
+            quatre_pixel *q = p;
             for (i = 0; i < height; i++)
             {
                 for (j = 0; j < width / 4; j++) // 2 horizontal pixel at a time
@@ -125,7 +123,7 @@ int main(int argc, char *argv[])
                     q++;
                 }
             }
-            write(fd_wr, u_et_v_dst, width * height / 4 * sizeof(quatre_pixel));
+            write(fd_wr, p, width * height / 4 * sizeof(quatre_pixel));
             
             fprintf(stderr, "Frame %d completed.\n", count);
             count++;
