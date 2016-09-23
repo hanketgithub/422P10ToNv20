@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     }
 
     // specify output file name
-    cp = strchr(argv[1], '.');
+    cp = rindex(argv[1], '.');
     strncpy(output.name, argv[1], cp - argv[1]);
     strcat(output.name, "_nv20");
     strcat(output.name, cp);
