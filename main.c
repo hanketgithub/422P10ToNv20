@@ -18,19 +18,12 @@
 
 #include "pack.h"
 
+
 #define MAX_WIDTH   7680
 #define MAX_HEIGHT  4320
 
 
-typedef struct
-{
-    char name[256];
-} string_t;
-
-
 static uint8_t img[MAX_WIDTH * MAX_HEIGHT * 4];
-
-static string_t null;
 
 
 int main(int argc, char *argv[])
@@ -50,7 +43,7 @@ int main(int argc, char *argv[])
     ssize_t rd_sz;
     
     char *cp;
-    string_t output;
+    char output[256] = { 0 };
     
     if (argc < 4)
     {
@@ -60,8 +53,7 @@ int main(int argc, char *argv[])
     }
 
 
-    cp      = NULL;
-    output  = null;
+    cp = NULL;
 
 
     // get input file name from comand line
@@ -73,12 +65,12 @@ int main(int argc, char *argv[])
     }
 
     // specify output file name
-    cp = rindex(argv[1], '.');
-    strncpy(output.name, argv[1], cp - argv[1]);
-    strcat(output.name, "_nv20");
-    strcat(output.name, cp);
+    cp = strrchr(argv[1], '.');
+    strncpy(output, argv[1], cp - argv[1]);
+    strcat(output, "_nv20");
+    strcat(output, cp);
     
-    ofd = open(output.name, O_RDWR | O_CREAT, S_IRUSR);
+    ofd = open(output, O_RDWR | O_CREAT, S_IRUSR);
 
     width   = atoi(argv[2]);
     height  = atoi(argv[3]);
@@ -150,7 +142,7 @@ int main(int argc, char *argv[])
     close(ofd);
     
     fprintf(stderr, "Done\n");
-    fprintf(stderr, "Output file: %s\n", output.name);
+    fprintf(stderr, "Output file: %s\n", output);
     
     return 0;
 }
